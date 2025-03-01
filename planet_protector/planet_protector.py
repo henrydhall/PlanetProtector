@@ -5,6 +5,7 @@ Just run this and you'll be good to go!
 """
 
 import math
+from random import random
 import sys
 
 import pygame as pg
@@ -19,8 +20,11 @@ DISPLAY_SURFACE = pg.display.set_mode((WIDTH, HEIGHT))
 FPS = pg.time.Clock()
 COLOR_BACKGROUD = (0, 0, 0)
 ACCELERATION = 0.1
-MAX_METEOR_SIZE = 10000 # Real world size
-MAX_METEOR_DISPLAY = 30 # Display size
+MAX_METEOR_SIZE = 10000  # Real world size
+MAX_METEOR_DISPLAY = 30  # Display size
+PLANET_CENTER_X = 200
+PLANET_CENTER_Y = 200
+FIRING_RADIUS = 175
 
 # Globals
 FRAME_RATE = 15
@@ -32,7 +36,7 @@ class Planet(pg.sprite.Sprite):
     def __init__(self):
         self.image = pg.image.load('resources/planet.png')
         self.rect = self.image.get_rect()
-        self.rect.center = (250, 250)
+        self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
 
     def update(self):
         """Planet update method."""
@@ -47,16 +51,24 @@ class Meteor(pg.sprite.Sprite):
     """Meteor class"""
 
     # TODO: I'd like to have a set speed, and just have that come towards the planet.
-    # TODO: set random x/y away from planet to start.
+    # TODO: look into why we have a very slight wobble in the trajectory towards the planet.
+    # the wobble started with having random start and changing the location of the planet
     x_v = 0
     y_v = 0
 
     def __init__(self, mass):
-        dimension = (MAX_METEOR_DISPLAY * mass/MAX_METEOR_SIZE) + 8
-        self.image = pg.transform.scale(pg.image.load('resources/meteor_1.png'), (dimension,dimension))
+        dimension = (MAX_METEOR_DISPLAY * mass / MAX_METEOR_SIZE) + 8
+        self.image = pg.transform.scale(pg.image.load('resources/meteor_1.png'), (dimension, dimension))
         self.rect = self.image.get_rect()
-        self.rect.center = (250, 50)
+        self.rect.center = self.random_start()
         self._mass = mass
+
+    def random_start(self) -> tuple[int, int]:
+        """Generate a random start location on the perimeters of our firing area."""
+        angle = random() * 2 * math.pi
+        x = math.cos(angle) * FIRING_RADIUS + PLANET_CENTER_X
+        y = math.sin(angle) * FIRING_RADIUS + PLANET_CENTER_Y
+        return x, y
 
     def draw(self, surface: pg.display):
         """Draw the meteor"""
