@@ -19,6 +19,8 @@ DISPLAY_SURFACE = pg.display.set_mode((WIDTH, HEIGHT))
 FPS = pg.time.Clock()
 COLOR_BACKGROUD = (0, 0, 0)
 ACCELERATION = 0.1
+MAX_METEOR_SIZE = 10000 # Real world size
+MAX_METEOR_DISPLAY = 30 # Display size
 
 # Globals
 FRAME_RATE = 15
@@ -49,12 +51,14 @@ class Meteor(pg.sprite.Sprite):
     x_v = 0
     y_v = 0
 
-    def __init__(self):
-        self.image = pg.image.load('resources/meteor_1.png')
+    def __init__(self, mass):
+        dimension = (MAX_METEOR_DISPLAY * mass/MAX_METEOR_SIZE) + 8
+        self.image = pg.transform.scale(pg.image.load('resources/meteor_1.png'), (dimension,dimension))
         self.rect = self.image.get_rect()
         self.rect.center = (250, 50)
+        self._mass = mass
 
-    def draw(self, surface):
+    def draw(self, surface: pg.display):
         """Draw the meteor"""
         surface.blit(self.image, self.rect)
 
@@ -101,7 +105,7 @@ def main():
     Main game loop.
     """
     planet = Planet()
-    meteor1 = Meteor()
+    meteor1 = Meteor(50)
     laser1 = Laser()
 
     while True:
