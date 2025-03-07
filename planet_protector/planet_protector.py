@@ -28,13 +28,16 @@ FIRING_RADIUS = 175
 
 # Globals
 FRAME_RATE = 15
+METEOR_ODDS = 50
 
 
 class Planet(pg.sprite.Sprite):
     """Planet."""
 
-    def __init__(self):
+    def __init__(self, *groups):
         self.image = pg.image.load('resources/planet.png')
+        # TODO: do group stuff with this one
+        # pg.sprite.Sprite.__init__(self, *groups)
         self.rect = self.image.get_rect()
         self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
 
@@ -56,8 +59,9 @@ class Meteor(pg.sprite.Sprite):
     x_v = 0
     y_v = 0
 
-    def __init__(self, mass):
+    def __init__(self, mass, *groups):
         dimension = (MAX_METEOR_DISPLAY * mass / MAX_METEOR_SIZE) + 8
+        pg.sprite.Sprite.__init__(self, *groups)
         self.image = pg.transform.scale(pg.image.load('resources/meteor_1.png'), (dimension, dimension))
         self.rect = self.image.get_rect()
         self.rect.center = self.random_start()
@@ -100,36 +104,59 @@ class Meteor(pg.sprite.Sprite):
         else:
             self.y_v += adjacent
 
+    def reduce_mass(self, damage: int):
+        self._mass -= damage
+        if self._mass < 0:
+            self.kill()
+
 
 class Laser(pg.sprite.Sprite):
     """Laser sprite to reduce meteor mass."""
 
-    def __init__(self):
+    def __init__(self, power: int = 1):
+        # TODO: implement group stuff
         self._color = (255, 0, 0)
+        self._damage = power
 
     def draw(self, planet: Planet, meteor: Meteor):
         """Draw the laser."""
         pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, meteor.rect.center, 3)
+
+    def damage(self, meteor: Meteor):
+        meteor.reduce_mass(self._damage)
 
 
 def main():
     """
     Main game loop.
     """
+
     planet = Planet()
-    meteor1 = Meteor(50)
     laser1 = Laser()
+
+    # Create game groups
+    meteors = pg.sprite.Group()
+    # TODO: create other game groups
+    # TODO: randomize meteor mass
+    # TODO: check for meteor/planet collision
 
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
+        if not meteors:  # TODO: change this to adding meteors at random
+            Meteor(50, meteors)
         planet.draw(DISPLAY_SURFACE)
-        meteor1.draw(DISPLAY_SURFACE)
-        laser1.draw(planet, meteor1)
+        for meteor in meteors:
+            meteor.draw(DISPLAY_SURFACE)
+            meteor.update(planet)
+            laser1.draw(planet, meteor)  # TODO: update this to be...fancy
+            laser1.damage(meteor)
 
-        meteor1.update(planet)
+        if not int(random() * METEOR_ODDS):
+            Meteor(100)
+
         pg.display.update()
 
         DISPLAY_SURFACE.fill(COLOR_BACKGROUD)
