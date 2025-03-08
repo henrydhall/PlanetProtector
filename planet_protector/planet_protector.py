@@ -5,8 +5,11 @@ Just run this and you'll be good to go!
 """
 
 import math
+import os
 from random import random
 import sys
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
 
 import pygame as pg
 
@@ -36,14 +39,9 @@ class Planet(pg.sprite.Sprite):
 
     def __init__(self, *groups):
         self.image = pg.image.load('resources/planet.png')
-        # TODO: do group stuff with this one
-        # pg.sprite.Sprite.__init__(self, *groups)
+        pg.sprite.Sprite.__init__(self, *groups)
         self.rect = self.image.get_rect()
         self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
-
-    def update(self):
-        """Planet update method."""
-        pass
 
     def draw(self, surface):
         """Draw the planet"""
@@ -113,10 +111,11 @@ class Meteor(pg.sprite.Sprite):
 class Laser(pg.sprite.Sprite):
     """Laser sprite to reduce meteor mass."""
 
-    def __init__(self, power: int = 1):
+    def __init__(self, power: int = 1, *groups):
         # TODO: implement group stuff
         self._color = (255, 0, 0)
         self._damage = power
+        pg.sprite.Sprite.__init__(self, *groups)
 
     def draw(self, planet: Planet, meteor: Meteor):
         """Draw the laser."""
@@ -131,23 +130,28 @@ def main():
     Main game loop.
     """
 
-    planet = Planet()
-    laser1 = Laser()
-
     # Create game groups
     meteors = pg.sprite.Group()
+    lasers = pg.sprite.Group()
+    all = pg.sprite.RenderUpdates()
+
+    Laser(5, lasers, all)
+
+    planet = Planet(all)
+
+    laser1 = lasers.sprites()[0]
     # TODO: create other game groups
     # TODO: randomize meteor mass
     # TODO: check for meteor/planet collision
 
-    while True:
+    while planet.alive():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
-        if not meteors:  # TODO: change this to adding meteors at random
-            Meteor(50, meteors)
+
         planet.draw(DISPLAY_SURFACE)
+
         for meteor in meteors:
             meteor.draw(DISPLAY_SURFACE)
             meteor.update(planet)
@@ -155,7 +159,10 @@ def main():
             laser1.damage(meteor)
 
         if not int(random() * METEOR_ODDS):
-            Meteor(100)
+            Meteor(1000, meteors)
+
+        for meteor in pg.sprite.spritecollide(planet, meteors, 1):
+            planet.kill()
 
         pg.display.update()
 
@@ -165,3 +172,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    pg.quit()
