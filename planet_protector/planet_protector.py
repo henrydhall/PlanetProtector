@@ -23,15 +23,16 @@ DISPLAY_SURFACE = pg.display.set_mode((WIDTH, HEIGHT))
 FPS = pg.time.Clock()
 COLOR_BACKGROUD = (0, 0, 0)
 ACCELERATION = 0.1
-MAX_METEOR_SIZE = 10000  # Real world size
-MAX_METEOR_DISPLAY = 30  # Display size
+MAX_ASTEROID_SIZE = 10000  # Real world size
+MAX_ASTEROID_DISPLAY = 30  # Display size
 PLANET_CENTER_X = 200
 PLANET_CENTER_Y = 200
-FIRING_RADIUS = 175
+FIRING_RADIUS = 190
 
 # Globals
 FRAME_RATE = 15
-METEOR_ODDS = 50
+ASTEROID_ODDS = 50
+ASTEROID_DESTROY_MASS = 50
 
 
 class Planet(pg.sprite.Sprite):
@@ -48,8 +49,8 @@ class Planet(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 
-class Meteor(pg.sprite.Sprite):
-    """Meteor class"""
+class Asteroid(pg.sprite.Sprite):
+    """Asteroid class"""
 
     # TODO: I'd like to have a set speed, and just have that come towards the planet.
     # TODO: look into why we have a very slight wobble in the trajectory towards the planet.
@@ -58,9 +59,9 @@ class Meteor(pg.sprite.Sprite):
     y_v = 0
 
     def __init__(self, mass, *groups):
-        dimension = (MAX_METEOR_DISPLAY * mass / MAX_METEOR_SIZE) + 8
+        dimension = (MAX_ASTEROID_DISPLAY * mass / MAX_ASTEROID_SIZE) + 8
         pg.sprite.Sprite.__init__(self, *groups)
-        self.image = pg.transform.scale(pg.image.load('resources/meteor_1.png'), (dimension, dimension))
+        self.image = pg.transform.scale(pg.image.load('resources/asteroid_1.png'), (dimension, dimension))
         self.rect = self.image.get_rect()
         self.rect.center = self.random_start()
         self._mass = mass
@@ -73,11 +74,11 @@ class Meteor(pg.sprite.Sprite):
         return x, y
 
     def draw(self, surface: pg.display):
-        """Draw the meteor"""
+        """Draw the asteroid"""
         surface.blit(self.image, self.rect)
 
     def update(self, planet: Planet):
-        """Update our x and y velocities, move the meteor."""
+        """Update our x and y velocities, move the asteroid."""
         self.calculate_acceleration(planet)
         self.rect.move_ip(self.x_v, self.y_v)
 
@@ -104,25 +105,24 @@ class Meteor(pg.sprite.Sprite):
 
     def reduce_mass(self, damage: int):
         self._mass -= damage
-        if self._mass < 0:
+        if self._mass < ASTEROID_DESTROY_MASS:
             self.kill()
 
 
 class Laser(pg.sprite.Sprite):
-    """Laser sprite to reduce meteor mass."""
+    """Laser sprite to reduce asteroid mass."""
 
     def __init__(self, power: int = 1, *groups):
-        # TODO: implement group stuff
         self._color = (255, 0, 0)
         self._damage = power
         pg.sprite.Sprite.__init__(self, *groups)
 
-    def draw(self, planet: Planet, meteor: Meteor):
+    def draw(self, planet: Planet, asteroid: Asteroid):
         """Draw the laser."""
-        pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, meteor.rect.center, 3)
+        pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, asteroid.rect.center, 3)
 
-    def damage(self, meteor: Meteor):
-        meteor.reduce_mass(self._damage)
+    def damage(self, asteroid: Asteroid):
+        asteroid.reduce_mass(self._damage)
 
 
 def main():
@@ -131,7 +131,7 @@ def main():
     """
 
     # Create game groups
-    meteors = pg.sprite.Group()
+    asteroids = pg.sprite.Group()
     lasers = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
 
@@ -140,9 +140,7 @@ def main():
     planet = Planet(all)
 
     laser1 = lasers.sprites()[0]
-    # TODO: create other game groups
-    # TODO: randomize meteor mass
-    # TODO: check for meteor/planet collision
+    # TODO: randomize asteroid mass
 
     while planet.alive():
         for event in pg.event.get():
@@ -152,16 +150,16 @@ def main():
 
         planet.draw(DISPLAY_SURFACE)
 
-        for meteor in meteors:
-            meteor.draw(DISPLAY_SURFACE)
-            meteor.update(planet)
-            laser1.draw(planet, meteor)  # TODO: update this to be...fancy
-            laser1.damage(meteor)
+        for asteroid in asteroids:
+            asteroid.draw(DISPLAY_SURFACE)
+            asteroid.update(planet)
+            laser1.draw(planet, asteroid)  # TODO: update this to be...fancy
+            laser1.damage(asteroid)
 
-        if not int(random() * METEOR_ODDS):
-            Meteor(1000, meteors)
+        if not int(random() * ASTEROID_ODDS):
+            Asteroid(150, asteroids)
 
-        for meteor in pg.sprite.spritecollide(planet, meteors, 1):
+        for asteroid in pg.sprite.spritecollide(planet, asteroids, 1):
             planet.kill()
 
         pg.display.update()
