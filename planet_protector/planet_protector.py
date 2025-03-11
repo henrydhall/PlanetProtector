@@ -58,13 +58,14 @@ class Asteroid(pg.sprite.Sprite):
     x_v = 0
     y_v = 0
 
-    def __init__(self, mass, *groups):
+    def __init__(self, mass: int, planet: Planet, *groups):
         dimension = (MAX_ASTEROID_DISPLAY * mass / MAX_ASTEROID_SIZE) + 8
         pg.sprite.Sprite.__init__(self, *groups)
         self.image = pg.transform.scale(pg.image.load('resources/asteroid_1.png'), (dimension, dimension))
         self.rect = self.image.get_rect()
         self.rect.center = self.random_start()
         self._mass = mass
+        self._planet = planet
 
     def random_start(self) -> tuple[int, int]:
         """Generate a random start location on the perimeters of our firing area."""
@@ -77,9 +78,9 @@ class Asteroid(pg.sprite.Sprite):
         """Draw the asteroid"""
         surface.blit(self.image, self.rect)
 
-    def update(self, planet: Planet):
+    def update(self):
         """Update our x and y velocities, move the asteroid."""
-        self.calculate_acceleration(planet)
+        self.calculate_acceleration(self._planet)
         self.rect.move_ip(self.x_v, self.y_v)
 
     def calculate_acceleration(self, planet: Planet) -> tuple[float, float]:
@@ -141,6 +142,7 @@ def main():
 
     laser1 = lasers.sprites()[0]
     # TODO: randomize asteroid mass
+    # Use an exponential function
 
     while planet.alive():
         for event in pg.event.get():
@@ -148,16 +150,17 @@ def main():
                 pg.quit()
                 sys.exit()
 
+        all.update()
+
         planet.draw(DISPLAY_SURFACE)
 
         for asteroid in asteroids:
             asteroid.draw(DISPLAY_SURFACE)
-            asteroid.update(planet)
             laser1.draw(planet, asteroid)  # TODO: update this to be...fancy
             laser1.damage(asteroid)
 
         if not int(random() * ASTEROID_ODDS):
-            Asteroid(150, asteroids)
+            Asteroid(150, planet, asteroids, all)
 
         for asteroid in pg.sprite.spritecollide(planet, asteroids, 1):
             planet.kill()
