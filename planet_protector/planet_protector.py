@@ -126,6 +126,38 @@ class Laser(pg.sprite.Sprite):
         asteroid.reduce_mass(self._damage)
 
 
+class Bank(pg.sprite.Sprite):
+    """Class for tracking player's money."""
+
+    def __init__(self, start_amount: int = 200, *groups):
+        super().__init__(*groups)
+        self._bank = start_amount
+
+    def add_bank(self, amount: int):
+        """Add to the bank."""
+        self._bank += amount
+    
+    def sub_bank(self, amount: int) -> bool:
+        """Subtract from bank if allowed."""
+        if amount <= self._bank:
+            self._bank -= amount
+            return True
+        return False
+    
+
+class Pane():
+    """Abstract building display panes."""
+    def __init__(self, x, y, width, height, color, border_radius):
+        # TODO: figure out how to use this...
+        self.rectangle = pg.Rect( x, y, width, height)
+        self.color = color
+        self.border_radius = border_radius
+    
+    def draw(self):
+        """Display the bank."""
+        pg.draw.rect(DISPLAY_SURFACE, pg.Color(255,255,255), pg.Rect(400,10,290,50), border_radius=15)
+
+
 def main():
     """
     Main game loop.
@@ -136,8 +168,9 @@ def main():
     lasers = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
 
+    # Create our entities
+    bank = Bank(all)
     Laser(5, lasers, all)
-
     planet = Planet(all)
 
     laser1 = lasers.sprites()[0]
@@ -164,6 +197,8 @@ def main():
 
         for asteroid in pg.sprite.spritecollide(planet, asteroids, 1):
             planet.kill()
+
+        #dirty = all.draw(DISPLAY_SURFACE) # TODO: fix so we can just run this
 
         pg.display.update()
 
