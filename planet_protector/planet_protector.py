@@ -13,6 +13,9 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
 
 import pygame as pg
 
+pg.init()
+
+
 if not pg.image.get_extended():
     raise SystemExit("Extended image module required.")
 
@@ -117,6 +120,9 @@ class Laser(pg.sprite.Sprite):
         self._color = (255, 0, 0)
         self._damage = power
         pg.sprite.Sprite.__init__(self, *groups)
+        self.image = pg.image.load('resources/laser.png')
+        self.rect = self.image.get_rect()
+        self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
 
     def draw(self, planet: Planet, asteroid: Asteroid):
         """Draw the laser."""
@@ -136,26 +142,29 @@ class Bank(pg.sprite.Sprite):
     def add_bank(self, amount: int):
         """Add to the bank."""
         self._bank += amount
-    
+
     def sub_bank(self, amount: int) -> bool:
         """Subtract from bank if allowed."""
         if amount <= self._bank:
             self._bank -= amount
             return True
         return False
-    
 
-class Pane():
+
+class Pane:  # TODO: we need to completely change this, but for now it works.
     """Abstract building display panes."""
+
     def __init__(self, x, y, width, height, color, border_radius):
         # TODO: figure out how to use this...
-        self.rectangle = pg.Rect( x, y, width, height)
+        self.rectangle = pg.Rect(x, y, width, height)
         self.color = color
         self.border_radius = border_radius
-    
-    def draw(self):
-        """Display the bank."""
-        pg.draw.rect(DISPLAY_SURFACE, pg.Color(255,255,255), pg.Rect(400,10,290,50), border_radius=15)
+        self.font = pg.font.SysFont('Arial', 25)
+
+    def draw(self, text):
+        """Display the Pane."""
+        pg.draw.rect(DISPLAY_SURFACE, pg.Color(255, 255, 255), pg.Rect(400, 10, 290, 50), border_radius=15)
+        DISPLAY_SURFACE.blit(self.font.render(text, True, (0, 0, 0)), (420, 20))
 
 
 def main():
@@ -169,9 +178,10 @@ def main():
     all = pg.sprite.RenderUpdates()
 
     # Create our entities
-    bank = Bank(all)
-    Laser(5, lasers, all)
+    test_pane = Pane(400, 10, 290, 50, pg.Color(255, 255, 255), 15)
+    bank = Bank(200)
     planet = Planet(all)
+    Laser(5, lasers, all)
 
     laser1 = lasers.sprites()[0]
     # TODO: randomize asteroid mass
@@ -185,7 +195,9 @@ def main():
 
         all.update()
 
-        planet.draw(DISPLAY_SURFACE)
+        dirty = all.draw(DISPLAY_SURFACE)
+
+        test_pane.draw(str(bank._bank))
 
         for asteroid in asteroids:
             asteroid.draw(DISPLAY_SURFACE)
@@ -197,8 +209,6 @@ def main():
 
         for asteroid in pg.sprite.spritecollide(planet, asteroids, 1):
             planet.kill()
-
-        #dirty = all.draw(DISPLAY_SURFACE) # TODO: fix so we can just run this
 
         pg.display.update()
 
