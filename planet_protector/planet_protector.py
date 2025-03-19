@@ -68,6 +68,7 @@ class Asteroid(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = self.random_start()
         self._mass = mass
+        self.start_mass = mass
         self._planet = planet
 
     def random_start(self) -> tuple[int, int]:
@@ -107,29 +108,12 @@ class Asteroid(pg.sprite.Sprite):
         else:
             self.y_v += adjacent
 
-    def reduce_mass(self, damage: int):
+    def reduce_mass(self, damage: int) -> bool:
         self._mass -= damage
         if self._mass < ASTEROID_DESTROY_MASS:
             self.kill()
-
-
-class Laser(pg.sprite.Sprite):
-    """Laser sprite to reduce asteroid mass."""
-
-    def __init__(self, power: int = 1, *groups):
-        self._color = (255, 0, 0)
-        self._damage = power
-        pg.sprite.Sprite.__init__(self, *groups)
-        self.image = pg.image.load('resources/laser.png')
-        self.rect = self.image.get_rect()
-        self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
-
-    def draw(self, planet: Planet, asteroid: Asteroid):
-        """Draw the laser."""
-        pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, asteroid.rect.center, 3)
-
-    def damage(self, asteroid: Asteroid):
-        asteroid.reduce_mass(self._damage)
+            return True
+        return False
 
 
 class Bank(pg.sprite.Sprite):
@@ -151,20 +135,40 @@ class Bank(pg.sprite.Sprite):
         return False
 
 
-class Pane:  # TODO: we need to completely change this, but for now it works.
+class Laser(pg.sprite.Sprite):
+    """Laser sprite to reduce asteroid mass."""
+
+    def __init__(self, bank: Bank, power: int = 1, *groups):
+        self._color = (255, 0, 0)
+        self._damage = power
+        pg.sprite.Sprite.__init__(self, *groups)
+        self._bank = bank
+        self.image = pg.image.load('resources/laser.png')
+        self.rect = self.image.get_rect()
+        self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
+
+    def draw(self, planet: Planet, asteroid: Asteroid):
+        """Draw the laser."""
+        pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, asteroid.rect.center, 3)
+
+    def damage(self, asteroid: Asteroid):
+        if asteroid.reduce_mass(self._damage):
+            self._bank.add_bank(asteroid.start_mass)
+
+
+class Pane:
     """Abstract building display panes."""
 
-    def __init__(self, x, y, width, height, color, border_radius):
-        # TODO: figure out how to use this...
-        self.rectangle = pg.Rect(x, y, width, height)
+    def __init__(self, x, y, width, height, color: pg.Color, border_radius):
+        self.rect = pg.Rect(x, y, width, height)
         self.color = color
         self.border_radius = border_radius
         self.font = pg.font.SysFont('Arial', 25)
 
     def draw(self, text):
         """Display the Pane."""
-        pg.draw.rect(DISPLAY_SURFACE, pg.Color(255, 255, 255), pg.Rect(400, 10, 290, 50), border_radius=15)
-        DISPLAY_SURFACE.blit(self.font.render(text, True, (0, 0, 0)), (420, 20))
+        pg.draw.rect(DISPLAY_SURFACE, self.color, self.rect, border_radius=self.border_radius)
+        DISPLAY_SURFACE.blit(self.font.render(text, True, (0, 0, 0)), (self.rect.x + 20, self.rect.y + 10))
 
 
 def main():
@@ -181,7 +185,7 @@ def main():
     test_pane = Pane(400, 10, 290, 50, pg.Color(255, 255, 255), 15)
     bank = Bank(200)
     planet = Planet(all)
-    Laser(5, lasers, all)
+    Laser(bank, 3, lasers, all)
 
     laser1 = lasers.sprites()[0]
     # TODO: randomize asteroid mass
@@ -197,11 +201,11 @@ def main():
 
         dirty = all.draw(DISPLAY_SURFACE)
 
-        test_pane.draw(str(bank._bank))
+        test_pane.draw('$' + str(bank._bank))
 
         for asteroid in asteroids:
             asteroid.draw(DISPLAY_SURFACE)
-            laser1.draw(planet, asteroid)  # TODO: update this to be...fancy
+            laser1.draw(planet, asteroid)
             laser1.damage(asteroid)
 
         if not int(random() * ASTEROID_ODDS):
