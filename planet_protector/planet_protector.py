@@ -24,7 +24,6 @@ HEIGHT = 600
 WIDTH = 700
 DISPLAY_SURFACE = pg.display.set_mode((WIDTH, HEIGHT))
 FPS = pg.time.Clock()
-COLOR_BACKGROUD = (0, 0, 0)
 ACCELERATION = 0.1
 MAX_ASTEROID_SIZE = 10000  # Real world size
 MAX_ASTEROID_DISPLAY = 30  # Display size
@@ -36,6 +35,10 @@ FIRING_RADIUS = 190
 FRAME_RATE = 15
 ASTEROID_ODDS = 50
 ASTEROID_DESTROY_MASS = 50
+
+# Colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
 
 class Planet(pg.sprite.Sprite):
@@ -70,6 +73,7 @@ class Asteroid(pg.sprite.Sprite):
         self._mass = mass
         self.start_mass = mass
         self._planet = planet
+        self.font = pg.font.SysFont('Arial', 25)
 
     def random_start(self) -> tuple[int, int]:
         """Generate a random start location on the perimeters of our firing area."""
@@ -83,9 +87,10 @@ class Asteroid(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
     def update(self):
-        """Update our x and y velocities, move the asteroid."""
+        """Update our x and y velocities, move the asteroid, draw current mass."""
         self.calculate_acceleration(self._planet)
         self.rect.move_ip(self.x_v, self.y_v)
+        DISPLAY_SURFACE.blit(self.font.render(str(self._mass), True, WHITE), (self.rect.x + 10, self.rect.y))
 
     def calculate_acceleration(self, planet: Planet) -> tuple[float, float]:
         """Calculate the component accelerations."""
@@ -109,6 +114,7 @@ class Asteroid(pg.sprite.Sprite):
             self.y_v += adjacent
 
     def reduce_mass(self, damage: int) -> bool:
+        """Reduce the mass of the asteroid. Return true if it is destroyed."""
         self._mass -= damage
         if self._mass < ASTEROID_DESTROY_MASS:
             self.kill()
@@ -152,6 +158,7 @@ class Laser(pg.sprite.Sprite):
         pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, asteroid.rect.center, 3)
 
     def damage(self, asteroid: Asteroid):
+        """Damage an asteroid. Add to the bank if it is destroyed."""
         if asteroid.reduce_mass(self._damage):
             self._bank.add_bank(asteroid.start_mass)
 
@@ -168,7 +175,7 @@ class Pane:
     def draw(self, text):
         """Display the Pane."""
         pg.draw.rect(DISPLAY_SURFACE, self.color, self.rect, border_radius=self.border_radius)
-        DISPLAY_SURFACE.blit(self.font.render(text, True, (0, 0, 0)), (self.rect.x + 20, self.rect.y + 10))
+        DISPLAY_SURFACE.blit(self.font.render(text, True, BLACK), (self.rect.x + 20, self.rect.y + 10))
 
 
 def main():
@@ -182,7 +189,8 @@ def main():
     all = pg.sprite.RenderUpdates()
 
     # Create our entities
-    test_pane = Pane(400, 10, 290, 50, pg.Color(255, 255, 255), 15)
+    bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
+    
     bank = Bank(200)
     planet = Planet(all)
     Laser(bank, 3, lasers, all)
@@ -201,10 +209,9 @@ def main():
 
         dirty = all.draw(DISPLAY_SURFACE)
 
-        test_pane.draw('$' + str(bank._bank))
+        bank_pane.draw('$' + str(bank._bank))
 
         for asteroid in asteroids:
-            asteroid.draw(DISPLAY_SURFACE)
             laser1.draw(planet, asteroid)
             laser1.damage(asteroid)
 
@@ -216,7 +223,7 @@ def main():
 
         pg.display.update()
 
-        DISPLAY_SURFACE.fill(COLOR_BACKGROUD)
+        DISPLAY_SURFACE.fill(BLACK)
         FPS.tick(FRAME_RATE)
 
 
