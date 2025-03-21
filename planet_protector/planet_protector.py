@@ -157,6 +157,9 @@ class Laser(pg.sprite.Sprite):
         """Draw the laser."""
         pg.draw.line(DISPLAY_SURFACE, (255, 0, 0), planet.rect.center, asteroid.rect.center, 3)
 
+    def update(self, *args, **kwargs):
+        """Update Laser, display stats in pane."""
+
     def damage(self, asteroid: Asteroid):
         """Damage an asteroid. Add to the bank if it is destroyed."""
         if asteroid.reduce_mass(self._damage):
@@ -175,7 +178,17 @@ class Pane:
     def draw(self, text):
         """Display the Pane."""
         pg.draw.rect(DISPLAY_SURFACE, self.color, self.rect, border_radius=self.border_radius)
-        DISPLAY_SURFACE.blit(self.font.render(text, True, BLACK), (self.rect.x + 20, self.rect.y + 10))
+        DISPLAY_SURFACE.blit(self.font.render(text, True, BLACK), (self.rect.x + 20, self.rect.y + 7))
+
+
+class InfoPane(Pane):
+    """Panes to display things like bank and weapon info.
+
+    bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
+    """
+
+    def __init__(self, position: int):
+        super().__init__(400, 10 + position * 50, 290, 44, pg.Color(WHITE), 15)
 
 
 def main():
@@ -189,13 +202,15 @@ def main():
     all = pg.sprite.RenderUpdates()
 
     # Create our entities
-    bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
-    
+    bank_pane = InfoPane(0)
+    # bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
+    laser_pane = InfoPane(1)
+
     bank = Bank(200)
     planet = Planet(all)
     Laser(bank, 3, lasers, all)
 
-    laser1 = lasers.sprites()[0]
+    laser1: Laser = lasers.sprites()[0]
     # TODO: randomize asteroid mass
     # Use an exponential function
 
@@ -210,6 +225,7 @@ def main():
         dirty = all.draw(DISPLAY_SURFACE)
 
         bank_pane.draw('$' + str(bank._bank))
+        laser_pane.draw('Laser 1  Damage: ' + str(laser1._damage))
 
         for asteroid in asteroids:
             laser1.draw(planet, asteroid)
