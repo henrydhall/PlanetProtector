@@ -169,11 +169,11 @@ class Laser(pg.sprite.Sprite):
 class Pane:
     """Abstract building display panes."""
 
-    def __init__(self, x, y, width, height, color: pg.Color, border_radius):
+    def __init__(self, x, y, width, height, color: pg.Color, border_radius, font_size=25):
         self.rect = pg.Rect(x, y, width, height)
         self.color = color
         self.border_radius = border_radius
-        self.font = pg.font.SysFont('Arial', 25)
+        self.font = pg.font.SysFont('Arial', font_size)
 
     def draw(self, text):
         """Display the Pane."""
@@ -187,8 +187,21 @@ class InfoPane(Pane):
     bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
     """
 
-    def __init__(self, position: int):
-        super().__init__(400, 10 + position * 50, 290, 44, pg.Color(WHITE), 15)
+    def __init__(self, position: int, font_size=25):
+        super().__init__(400, 10 + position * 50, 290, 44, pg.Color(WHITE), 15, font_size)
+
+
+class Click(pg.sprite.Sprite):
+    """Click entity to interact with the game."""
+
+    def __init__(self, click_info, *groups):
+        super().__init__(*groups)
+        self.image = pg.transform.scale(pg.image.load('resources/laser.png'), (5, 5))
+        self.rect = self.image.get_rect()
+        self.rect.center = click_info['pos']
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
 
 
 def main():
@@ -199,12 +212,12 @@ def main():
     # Create game groups
     asteroids = pg.sprite.Group()
     lasers = pg.sprite.Group()
+    clicks = pg.sprite.Group()
     all = pg.sprite.RenderUpdates()
 
     # Create our entities
     bank_pane = InfoPane(0)
-    # bank_pane = Pane(400, 10, 290, 50, pg.Color(WHITE), 15)
-    laser_pane = InfoPane(1)
+    laser_pane = InfoPane(1, 15)
 
     bank = Bank(200)
     planet = Planet(all)
@@ -219,6 +232,12 @@ def main():
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                Click(event.dict, clicks, all)
+                for click in pg.sprite.spritecollide(planet, clicks, True):
+                    print(click)
+                    # TODO: make a button to click
+                    # TODO: kill all clicks
 
         all.update()
 
@@ -234,7 +253,7 @@ def main():
         if not int(random() * ASTEROID_ODDS):
             Asteroid(150, planet, asteroids, all)
 
-        for asteroid in pg.sprite.spritecollide(planet, asteroids, 1):
+        for asteroid in pg.sprite.spritecollide(planet, asteroids, True):
             planet.kill()
 
         pg.display.update()
