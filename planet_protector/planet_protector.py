@@ -152,6 +152,7 @@ class Laser(pg.sprite.Sprite):
         self.image = pg.image.load('resources/laser.png')
         self.rect = self.image.get_rect()
         self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
+        self.upgrade_cost = 10
 
     def draw(self, planet: Planet, asteroid: Asteroid):
         """Draw the laser."""
@@ -164,6 +165,11 @@ class Laser(pg.sprite.Sprite):
         """Damage an asteroid. Add to the bank if it is destroyed."""
         if asteroid.reduce_mass(self._damage):
             self._bank.add_bank(asteroid.start_mass)
+
+    def upgrade(self):
+        """Upgrade the laser."""
+        self.upgrade_cost = self.upgrade_cost * 2
+        self._damage += 1
 
 
 class Pane:
@@ -234,17 +240,19 @@ def main():
                 sys.exit()
             elif event.type == pg.MOUSEBUTTONDOWN:
                 Click(event.dict, clicks, all)
-                for click in pg.sprite.spritecollide(planet, clicks, True):
-                    print(click)
-                    # TODO: make a button to click
-                    # TODO: kill all clicks
+                for click in pg.sprite.spritecollide(laser_pane, clicks, True):
+                    if bank.sub_bank(laser1.upgrade_cost):
+                        laser1.upgrade()
 
         all.update()
 
         dirty = all.draw(DISPLAY_SURFACE)
 
         bank_pane.draw('$' + str(bank._bank))
-        laser_pane.draw('Laser 1  Damage: ' + str(laser1._damage))
+        laser_pane.draw('Laser 1  Damage: ' + str(laser1._damage) + ' Cost to upgrade:' + str(laser1.upgrade_cost))
+
+        for click in clicks:
+            click.kill()
 
         for asteroid in asteroids:
             laser1.draw(planet, asteroid)
