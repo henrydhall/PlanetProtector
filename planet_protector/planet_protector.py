@@ -181,10 +181,12 @@ class Pane:
         self.border_radius = border_radius
         self.font = pg.font.SysFont('Arial', font_size)
 
-    def draw(self, text):
+    def draw(self, *args):
         """Display the Pane."""
         pg.draw.rect(DISPLAY_SURFACE, self.color, self.rect, border_radius=self.border_radius)
-        DISPLAY_SURFACE.blit(self.font.render(text, True, BLACK), (self.rect.x + 20, self.rect.y + 7))
+        DISPLAY_SURFACE.blit(
+            self.font.render(''.join(str(s) for s in args), True, BLACK), (self.rect.x + 20, self.rect.y + 7)
+        )
 
 
 class InfoPane(Pane):
@@ -249,7 +251,7 @@ def main():
         dirty = all.draw(DISPLAY_SURFACE)
 
         bank_pane.draw('$' + str(bank._bank))
-        laser_pane.draw('Laser 1  Damage: ' + str(laser1._damage) + ' Cost to upgrade:' + str(laser1.upgrade_cost))
+        laser_pane.draw('Laser 1  Damage: ', laser1._damage, ' Cost to upgrade:', laser1.upgrade_cost)
 
         for click in clicks:
             click.kill()
