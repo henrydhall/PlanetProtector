@@ -145,9 +145,9 @@ class Laser(pg.sprite.Sprite):
     """Laser sprite to reduce asteroid mass."""
 
     def __init__(self, bank: Bank, power: int = 1, *groups):
+        pg.sprite.Sprite.__init__(self, *groups)
         self._color = (255, 0, 0)
         self._damage = power
-        pg.sprite.Sprite.__init__(self, *groups)
         self._bank = bank
         self.image = pg.image.load('resources/laser.png')
         self.rect = self.image.get_rect()
@@ -171,6 +171,31 @@ class Laser(pg.sprite.Sprite):
         self.upgrade_cost = self.upgrade_cost * 2
         self._damage += 1
 
+class MissileLauncher(pg.sprite.Sprite):
+    """Missile Launcher sprite to shoot missiles"""
+
+    def __init__(self, bank: Bank, power: int = 10, *groups):
+        super().__init__(*groups)
+        self._damage = power
+        self._bank = bank
+        raise NotImplementedError('TODO: finish MissileLauncher')
+        self.image = pg.image.load('resources/laser.png') 
+        self.rect = self.image.get_rect()
+        self.rect.center = (PLANET_CENTER_X, PLANET_CENTER_Y)
+        self.upgrade_cost = 10
+
+    def draw(self, planet: Planet, asteroid: Asteroid):
+        """Draw the MissileLaunch...might not need this."""
+        raise NotImplementedError('TODO: MissileLauncher.draw')
+    
+    def launch(self, asteroid: Asteroid):
+        """Launch a missile at an asteroid."""
+        raise NotImplementedError('TODO: build missiles.')
+
+    def upgrade(self):
+        """Upgrade the missile launcher."""
+        self.upgrade_cost = self.upgrade_cost * 2
+        self._damage += 1
 
 class Pane:
     """Abstract building display panes."""
